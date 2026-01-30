@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Curriculum Vitae - Rahayu</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+    
+    <style>
+        /* --- CORE SETTINGS --- */
+        body {
+            background-color: #525659;
+            display: flex;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        #cv-document {
+            width: 210mm;
+            min-height: 297mm;
+            background: white;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+            position: relative;
+            overflow: hidden;
+        }
+
+        /* --- PRINT SETTINGS --- */
+        @media print {
+            body {
+                background: none;
+                padding: 0;
+                margin: 0;
+            }
+            #cv-document {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                height: 100%;
+                print-color-adjust: exact;
+                -webkit-print-color-adjust: exact;
+            }
+            .no-print {
+                display: none !important;
+            }
+            section {
+                page-break-inside: avoid;
+            }
+        }
+
+        /* --- THEME 1: MODERN BLUE (Sidebar Style) --- */
+        .theme-modern {
+            font-family: 'Inter', sans-serif;
+            display: flex;
+            flex-direction: row;
+            color: #374151;
+        }
+        .theme-modern .sidebar {
+            width: 34%; /* Sedikit diperlebar untuk mengakomodasi skill detail */
+            background-color: #0E2954;
+            color: white;
+            padding: 30px 20px;
+            display: flex;
+            flex-direction: column;
+        }
+        .theme-modern .main-content {
+            width: 66%;
+            padding: 40px;
+            background-color: white;
+        }
+        .theme-modern .header-section {
+            display: none;
+        }
+        .theme-modern .sidebar-header {
+            display: block;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        .theme-modern h2 {
+            color: #0E2954;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            font-weight: 700;
+            border-bottom: 2px solid #e5e7eb;
+            padding-bottom: 5px;
+            margin-bottom: 15px;
+            margin-top: 25px;
+            font-size: 1.1rem;
+        }
+        .theme-modern .sidebar h3 {
+            color: #BFDBFE;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            border-bottom: 1px solid #3B82F6;
+            padding-bottom: 5px;
+            margin-bottom: 10px;
+            margin-top: 25px;
+            font-weight: 600;
+        }
+        .theme-modern .job-item {
+            margin-bottom: 20px;
+            padding-left: 15px;
+            border-left: 3px solid #0E2954;
+        }
+
+        /* --- THEME 2: EUROPASS / EXECUTIVE --- */
+        .theme-executive {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            flex-direction: column;
+            color: #1f2937;
+        }
+        .theme-executive .sidebar-header {
+            display: none;
+        }
+        .theme-executive .header-section {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 30px 40px;
+            background-color: white;
+            border-bottom: 4px solid #0E2954;
+        }
+        .theme-executive .content-wrapper {
+            display: flex;
+            flex-direction: row-reverse;
+            flex-grow: 1;
+        }
+        .theme-executive .sidebar {
+            width: 30%;
+            background-color: #F3F4F6;
+            color: #111827;
+            padding: 30px 20px;
+            border-left: 1px solid #e5e7eb;
+        }
+        .theme-executive .main-content {
+            width: 70%;
+            padding: 30px 40px;
+        }
+        .theme-executive h1 {
+            color: #0E2954;
+            font-size: 2.2rem;
+            text-transform: uppercase;
+        }
+        .theme-executive .sidebar h3 {
+            color: #0E2954;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+            margin-top: 25px;
+            font-size: 0.9rem;
+        }
+        .theme-executive .sidebar p, .theme-executive .sidebar span, .theme-executive .sidebar li {
+            color: #374151;
+        }
+        .theme-executive .initial-circle {
+            display: none;
+        }
+        .theme-executive h2 {
+            font-size: 1.25rem;
+            color: #0E2954;
+            font-weight: 700;
+            margin-top: 20px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .theme-executive h2::before {
+            content: '';
+            display: block;
+            width: 6px;
+            height: 24px;
+            background-color: #0E2954;
+        }
+        .theme-executive .contact-icon { color: #0E2954 !important; }
+        .theme-executive .contact-text { color: #374151 !important; }
+
+        /* --- THEME 3: ATS FRIENDLY --- */
+        .theme-ats {
+            font-family: 'Merriweather', serif;
+            display: block;
+            padding: 40px;
+            color: black;
+        }
+        .theme-ats .content-wrapper {
+            display: flex;
+            flex-direction: column;
+        }
+        .theme-ats .sidebar {
+            width: 100%;
+            background: none;
+            color: black;
+            padding: 0;
+            order: 2;
+            border-top: 1px solid #000;
+            margin-top: 20px;
+            padding-top: 20px;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        .theme-ats .sidebar-header { display: none; }
+        .theme-ats .header-section {
+            display: block;
+            text-align: center;
+            margin-bottom: 20px;
+            border-bottom: 1px solid black;
+            padding-bottom: 20px;
+        }
+        .theme-ats .initial-circle { display: none; }
+        .theme-ats .main-content {
+            width: 100%;
+            padding: 0;
+            background: none;
+            order: 1;
+        }
+        .theme-ats h1 {
+            font-size: 2rem;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+        .theme-ats .header-contact { font-size: 0.9rem; margin-top: 5px;}
+        .theme-ats h2 {
+            font-weight: 700;
+            text-transform: uppercase;
+            border-bottom: 1px solid #000;
+            margin-top: 20px;
+            margin-bottom: 10px;
+            padding-bottom: 3px;
+        }
+        .theme-ats h3 {
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 20px;
+            font-size: 1rem;
+            color: black !important;
+            border: none !important;
+        }
+        .theme-ats .job-item {
+            border: none;
+            padding: 0;
+            margin-bottom: 15px;
+        }
+        .theme-ats .contact-info-block { display: none; }
+        .theme-ats .text-blue-200, .theme-ats .text-blue-300 { color: black !important; }
+        .theme-ats li { list-style-type: square; margin-left: 20px; }
+        
+        /* Helper for skill tags in sidebar */
+        .skill-tag {
+            font-size: 0.75rem;
+            line-height: 1.4;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+        .theme-modern .skill-title { color: #93C5FD; font-weight: bold; font-size: 0.8rem; }
+        .theme-modern .skill-desc { color: #E5E7EB; font-weight: 300; }
+        
+        .theme-executive .skill-title { color: #1F2937; font-weight: bold; font-size: 0.8rem; }
+        .theme-executive .skill-desc { color: #4B5563; }
+    </style>
+</head>
+<body>
+
+    <!-- CONTROL PANEL (NO PRINT) -->
+    <div class="fixed bottom-5 right-5 no-print flex flex-col gap-3 z-50">
+        <div class="bg-white p-4 rounded-xl shadow-xl border border-gray-200 w-64">
+            <h4 class="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">Pilih Tema CV:</h4>
+            <div class="flex flex-col gap-2">
+                <button onclick="setTheme('modern')" class="text-left px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors border border-transparent focus:border-blue-500 flex items-center gap-2 group">
+                    <div class="w-3 h-3 rounded-full bg-[#0E2954]"></div> Modern Blue
+                </button>
+                <button onclick="setTheme('executive')" class="text-left px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors border border-transparent focus:border-gray-500 flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full bg-gray-600"></div> Executive / Europass
+                </button>
+                <button onclick="setTheme('ats')" class="text-left px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors border border-transparent focus:border-black flex items-center gap-2">
+                    <div class="w-3 h-3 rounded-full border border-black bg-white"></div> ATS Friendly
+                </button>
+            </div>
+            <hr class="my-3">
+            <button onclick="window.print()" class="w-full bg-[#0E2954] text-white font-bold py-2 rounded-lg shadow hover:bg-blue-900 transition text-sm flex justify-center items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                </svg>
+                Cetak / Simpan PDF
+            </button>
+        </div>
+    </div>
+
+    <!-- DOCUMENT ROOT -->
+    <div id="cv-document" class="theme-modern">
+        
+        <!-- TOP HEADER (Only visible in Executive/ATS) -->
+        <header class="header-section">
+            <div class="flex-1">
+                <h1 class="font-bold text-3xl mb-1">RAHAYU</h1>
+                <p class="text-lg header-role text-gray-600 uppercase tracking-wide">MBA (International) Candidate</p>
+                <!-- Header Contact (ATS) -->
+                <div class="header-contact mt-2 text-sm hidden theme-ats:block">
+                    Douliu, Yunlin, Taiwan | +886 960-971-042 | rahayuazhr18@gmail.com <br>
+                    linkedin.com/in/rahayu-8361173a9
+                </div>
+            </div>
+            <!-- Executive Contact Info -->
+            <div class="text-right text-sm leading-relaxed hidden theme-executive:block">
+                <p>Douliu, Yunlin, Taiwan</p>
+                <p>+886 960-971-042</p>
+                <p>rahayuazhr18@gmail.com</p>
+            </div>
+        </header>
+
+        <div class="content-wrapper h-full flex w-full">
+            
+            <!-- SIDEBAR -->
+            <aside class="sidebar">
+                
+                <!-- Sidebar Header (Modern Theme Only) -->
+                <div class="sidebar-header">
+                    <div class="initial-circle w-20 h-20 bg-blue-400 rounded-full mx-auto flex items-center justify-center text-3xl font-bold text-[#0E2954] mb-4 border-4 border-white">
+                        R
+                    </div>
+                    <h1 class="text-2xl font-bold tracking-wider uppercase">RAHAYU</h1>
+                    <p class="text-blue-200 text-sm mt-1">MBA Candidate</p>
+                </div>
+
+                <!-- Contact Info (Sidebar version) -->
+                <div class="contact-info-block mb-6">
+                    <h3 class="tracking-widest text-blue-100">Contact</h3>
+                    <ul class="space-y-2 text-xs font-light">
+                        <li class="flex items-start gap-3">
+                            <span class="mt-0.5 text-blue-300 contact-icon">📍</span>
+                            <span class="contact-text">Douliu, Yunlin, Taiwan</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-0.5 text-blue-300 contact-icon">📞</span>
+                            <span class="contact-text">+886 960-971-042</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-0.5 text-blue-300 contact-icon">📧</span>
+                            <span class="break-all contact-text">rahayuazhr18@gmail.com</span>
+                        </li>
+                        <li class="flex items-start gap-3">
+                            <span class="mt-0.5 text-blue-300 contact-icon">🔗</span>
+                            <a href="https://linkedin.com/in/rahayu-8361173a9" class="hover:underline contact-text">LinkedIn Profile</a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- CORE SKILLS (Grouped) -->
+                <div class="mb-6">
+                    <h3 class="tracking-widest text-blue-100">Core Skills</h3>
+                    
+                    <div class="skill-tag">
+                        <span class="skill-title contact-text">Sales & Customer Support</span>
+                        <span class="skill-desc contact-text block">Customer handling, inquiries, relationship building.</span>
+                    </div>
+                    
+                    <div class="skill-tag">
+                        <span class="skill-title contact-text">Marketing Support</span>
+                        <span class="skill-desc contact-text block">Social media management, ads design, audience engagement.</span>
+                    </div>
+
+                    <div class="skill-tag">
+                        <span class="skill-title contact-text">Admin & Ops</span>
+                        <span class="skill-desc contact-text block">Documentation, data entry, SOP workflows, teamwork.</span>
+                    </div>
+
+                     <div class="skill-tag">
+                        <span class="skill-title contact-text">Content Production</span>
+                        <span class="skill-desc contact-text block">Short video editing, basic photo editing.</span>
+                    </div>
+                </div>
+
+                <!-- TOOLS -->
+                <div class="mb-6">
+                    <h3 class="tracking-widest text-blue-100">Tools</h3>
+                    <ul class="text-xs space-y-1 contact-text">
+                        <li>• Microsoft Office (Excel, Word, PPT)</li>
+                        <li>• Design: Canva, CapCut, Meitu</li>
+                        <li>• Statistics: Stata</li>
+                    </ul>
+                </div>
+
+                <!-- LANGUAGES -->
+                <div class="mb-6">
+                    <h3 class="tracking-widest text-blue-100">Languages</h3>
+                    <ul class="space-y-1 text-xs contact-text">
+                        <li class="flex justify-between">
+                            <span>Indonesian</span>
+                            <span class="text-blue-300 contact-icon">Native</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span>English</span>
+                            <span class="text-blue-300 contact-icon">Professional</span>
+                        </li>
+                        <li class="flex justify-between">
+                            <span>Mandarin</span>
+                            <span class="text-blue-300 contact-icon">Basic</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- AVAILABILITY -->
+                <div class="mt-auto pt-4 border-t border-blue-800 theme-executive:border-gray-300">
+                    <p class="text-xs font-bold text-black-400 theme-executive:text-green-700 contact-text">
+                        Available for immediate start (Based in Taiwan)
+                    </p>
+                </div>
+            </aside>
+
+            <!-- MAIN CONTENT -->
+            <main class="main-content">
+                
+                <!-- Summary -->
+                <section class="mb-6">
+                    <h2>Professional Summary</h2>
+                    <p class="text-sm leading-relaxed text-justify">
+                        MBA (International) candidate with strengths in sales, marketing support, administration, and business operations. Experienced in customer communication, social media management, advertising content design, and team-based work in structured environments. Fast learner with strong work discipline and practical problem-solving skills.
+                    </p>
+                </section>
+
+                <!-- Experience -->
+                <section class="mb-6">
+                    <h2>Work Experience</h2>
+
+                    <!-- Job 1 (Taiwan - Ops) -->
+                    <div class="job-item">
+                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
+                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Operations / Production Support</h3>
+                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2023 – 2024</span>
+                        </div>
+                        <p class="text-sm italic mb-2 font-semibold text-gray-600">Part-time | Taiwan</p>
+                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
+                            <li>Followed SOP-based processes to support production flow and quality standards.</li>
+                            <li>Coordinated with team members to ensure smooth daily operations.</li>
+                            <li>Maintained clean and organized workstation aligned with safety practices.</li>
+                            <li>Demonstrated punctuality, discipline, and reliability.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Job 2 (Taiwan - Digital Marketing) -->
+                    <div class="job-item">
+                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
+                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Digital Marketing & Live Streaming Support</h3>
+                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2023 – 2024</span>
+                        </div>
+                        <p class="text-sm italic mb-2 font-semibold text-gray-600">Part-Time | Taiwan</p>
+                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
+                            <li>Supported live streaming sessions and assisted real-time customer interaction.</li>
+                            <li>Responded to customer questions to support sales conversion.</li>
+                            <li>Prepared simple promotional content and edited short videos.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Job 3 (Web Dragon) -->
+                    <div class="job-item">
+                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
+                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Admin & Customer Service</h3>
+                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2021 – 2022</span>
+                        </div>
+                        <p class="text-sm italic mb-2 font-semibold text-gray-600">Web Dragon (Startup) | Indonesia</p>
+                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
+                            <li>Handled customer inquiries and provided administrative support.</li>
+                            <li>Managed documentation, basic reporting, and task coordination.</li>
+                            <li>Supported customer communication by tracking issues and ensuring resolution.</li>
+                        </ul>
+                    </div>
+
+                    <!-- Job 4 (ReadyGo) -->
+                    <div class="job-item border-l-0">
+                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
+                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Social Media & Ad Designer</h3>
+                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2020 – 2021</span>
+                        </div>
+                        <p class="text-sm italic mb-2 font-semibold text-gray-600">ReadyGo (Online Ride-Hailing) | Indonesia</p>
+                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
+                            <li>Designed advertising visuals for social media and promotional campaigns.</li>
+                            <li>Managed social media posting and basic content scheduling.</li>
+                            <li>Edited promotional videos for marketing content and user engagement.</li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Education -->
+                <section>
+                    <h2>Education</h2>
+                    
+                    <div class="mb-4">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-sm m-0 p-0 border-none">Master of Business Administration (International)</h3>
+                                <p class="text-xs text-gray-700">National Yunlin University of Science and Technology, Taiwan</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold bg-blue-50 px-2 py-1 rounded inline-block">2023 – 2026 (Expected)</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-2 border-t border-dashed border-gray-300">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <h3 class="font-bold text-sm m-0 p-0 border-none">Bachelor of Intl. Business Administration</h3>
+                                <p class="text-xs text-gray-700">Politeknik Negeri Bengkalis, Indonesia</p>
+                            </div>
+                            <div class="text-right">
+                                <p class="text-xs font-bold text-gray-600">2018 – 2022</p>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                 <!-- Strengths for ATS (Hidden in Modern/Exec because already in sidebar/summary) -->
+                 <section class="mt-4 pt-4 border-t border-black hidden theme-ats:block">
+                    <h2>Professional Strengths</h2>
+                    <p class="text-sm">Disciplined, Punctual, Organized, Honest, Fast Learner, Problem Solving.</p>
+                </section>
+
+            </main>
+        </div>
+    </div>
+
+    <script>
+        // Theme Switcher Logic
+        function setTheme(themeName) {
+            const doc = document.getElementById('cv-document');
+            doc.classList.remove('theme-modern', 'theme-executive', 'theme-ats');
+            doc.classList.add('theme-' + themeName);
+        }
+    </script>
+</body>
+</html>
