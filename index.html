@@ -1,534 +1,550 @@
-<!DOCTYPE html>
-<html lang="id">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Curriculum Vitae - Rahayu</title>
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+import React, { useState, useRef } from 'react';
+import { Trash2, Plus, Download, Layout, FileText, Briefcase, GraduationCap, Wrench, Globe, User, Printer } from 'lucide-react';
+
+// --- DATA AWAL (INITIAL STATE) ---
+const initialData = {
+  personalInfo: {
+    name: "RAHAYU",
+    role: "MBA (International) Candidate",
+    phone: "+886 960-971-042",
+    email: "rahayuazhr18@gmail.com",
+    address: "Douliu, Yunlin, Taiwan",
+    linkedin: "linkedin.com/in/rahayu-8361173a9",
+    summary: "MBA (International) candidate with strengths in sales, marketing support, administration, and business operations. Experienced in customer communication, social media management, advertising content design, and team-based work in structured environments. Fast learner with strong work discipline and practical problem-solving skills."
+  },
+  experience: [
+    {
+      id: 1,
+      title: "Operations / Production Support",
+      company: "Part-time | Taiwan",
+      period: "2023 – 2024",
+      description: "Followed SOP-based processes to support production flow and quality standards.\nCoordinated with team members to ensure smooth daily operations.\nMaintained clean and organized workstation aligned with safety practices.\nDemonstrated punctuality, discipline, and reliability."
+    },
+    {
+      id: 2,
+      title: "Digital Marketing & Live Streaming Support",
+      company: "Part-Time | Taiwan",
+      period: "2023 – 2024",
+      description: "Supported live streaming sessions and assisted real-time customer interaction.\nResponded to customer questions to support sales conversion.\nPrepared simple promotional content and edited short videos."
+    },
+    {
+      id: 3,
+      title: "Admin & Customer Service",
+      company: "Web Dragon (Startup) | Indonesia",
+      period: "2021 – 2022",
+      description: "Handled customer inquiries and provided administrative support.\nManaged documentation, basic reporting, and task coordination.\nSupported customer communication by tracking issues and ensuring resolution."
+    }
+  ],
+  education: [
+    {
+      id: 1,
+      degree: "Master of Business Administration (International)",
+      school: "National Yunlin University of Science and Technology, Taiwan",
+      period: "2023 – 2026 (Expected)"
+    },
+    {
+      id: 2,
+      degree: "Bachelor of Intl. Business Administration",
+      school: "Politeknik Negeri Bengkalis, Indonesia",
+      period: "2018 – 2022"
+    }
+  ],
+  skills: [
+    { id: 1, title: "Sales & Support", desc: "Customer handling, inquiries, relationship building." },
+    { id: 2, title: "Marketing Support", desc: "Social media management, ads design, audience engagement." },
+    { id: 3, title: "Admin & Ops", desc: "Documentation, data entry, SOP workflows, teamwork." },
+    { id: 4, title: "Content Production", desc: "Short video editing, basic photo editing." }
+  ],
+  tools: ["Microsoft Office (Excel, Word, PPT)", "Design: Canva, CapCut, Meitu", "Statistics: Stata"],
+  languages: [
+    { name: "Indonesian", level: "Native" },
+    { name: "English", level: "Professional" },
+    { name: "Mandarin", level: "Basic" }
+  ],
+  // Fitur "Komponen yang dimau" (Custom Section)
+  customSections: [] 
+};
+
+// --- STYLES INJECTION (Menggunakan CSS asli Anda) ---
+const OriginalStyles = () => (
+  <style>{`
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Merriweather:wght@300;400;700&family=Roboto:wght@300;400;500;700&display=swap');
+
+    /* --- CORE & PRINT --- */
+    #cv-preview-container {
+      width: 210mm;
+      min-height: 297mm;
+      background: white;
+      box-shadow: 0 0 20px rgba(0,0,0,0.1);
+      margin: 0 auto;
+      overflow: hidden;
+    }
     
-    <style>
-        /* --- CORE SETTINGS --- */
-        body {
-            background-color: #525659;
-            display: flex;
-            justify-content: center;
-            padding: 20px;
-        }
+    @media print {
+      body * { visibility: hidden; }
+      #cv-preview-container, #cv-preview-container * { visibility: visible; }
+      #cv-preview-container {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        margin: 0;
+        box-shadow: none;
+      }
+      .no-print { display: none !important; }
+      @page { margin: 0; size: auto; }
+    }
 
-        #cv-document {
-            width: 210mm;
-            min-height: 297mm;
-            background: white;
-            box-shadow: 0 0 20px rgba(0,0,0,0.5);
-            position: relative;
-            overflow: hidden;
-        }
+    /* --- THEME 1: MODERN BLUE --- */
+    .theme-modern { font-family: 'Inter', sans-serif; display: flex; color: #374151; }
+    .theme-modern .sidebar { width: 34%; background-color: #0E2954; color: white; padding: 30px 20px; display: flex; flex-direction: column; }
+    .theme-modern .main-content { width: 66%; padding: 40px; background-color: white; }
+    .theme-modern .header-section { display: none; }
+    .theme-modern .sidebar-header { display: block; text-align: center; margin-bottom: 30px; }
+    .theme-modern h2 { color: #0E2954; text-transform: uppercase; font-weight: 700; border-bottom: 2px solid #e5e7eb; padding-bottom: 5px; margin-bottom: 15px; margin-top: 25px; font-size: 1.1rem; }
+    .theme-modern .sidebar h3 { color: #BFDBFE; text-transform: uppercase; font-size: 0.85rem; border-bottom: 1px solid #3B82F6; padding-bottom: 5px; margin-bottom: 10px; margin-top: 25px; font-weight: 600; }
+    .theme-modern .job-item { margin-bottom: 20px; padding-left: 15px; border-left: 3px solid #0E2954; }
+    .theme-modern .skill-title { color: #93C5FD; font-weight: bold; font-size: 0.8rem; display:block; }
+    .theme-modern .skill-desc { color: #E5E7EB; font-weight: 300; font-size: 0.75rem; }
+    .theme-modern .contact-icon { color: #60A5FA; margin-right: 8px; }
+    .theme-modern .contact-text { color: white; }
 
-        /* --- PRINT SETTINGS --- */
-        @media print {
-            body {
-                background: none;
-                padding: 0;
-                margin: 0;
-            }
-            #cv-document {
-                box-shadow: none;
-                margin: 0;
-                width: 100%;
-                height: 100%;
-                print-color-adjust: exact;
-                -webkit-print-color-adjust: exact;
-            }
-            .no-print {
-                display: none !important;
-            }
-            section {
-                page-break-inside: avoid;
-            }
-        }
+    /* --- THEME 2: EXECUTIVE --- */
+    .theme-executive { font-family: 'Roboto', sans-serif; display: flex; flex-direction: column; color: #1f2937; }
+    .theme-executive .sidebar-header { display: none; }
+    .theme-executive .header-section { display: flex; justify-content: space-between; align-items: center; padding: 30px 40px; background-color: white; border-bottom: 4px solid #0E2954; }
+    .theme-executive .content-wrapper { display: flex; flex-direction: row-reverse; flex-grow: 1; }
+    .theme-executive .sidebar { width: 30%; background-color: #F3F4F6; color: #111827; padding: 30px 20px; border-left: 1px solid #e5e7eb; }
+    .theme-executive .main-content { width: 70%; padding: 30px 40px; }
+    .theme-executive h1 { color: #0E2954; font-size: 2.2rem; text-transform: uppercase; margin:0; }
+    .theme-executive .sidebar h3 { color: #0E2954; font-weight: 700; text-transform: uppercase; margin-bottom: 10px; margin-top: 25px; font-size: 0.9rem; }
+    .theme-executive h2 { font-size: 1.25rem; color: #0E2954; font-weight: 700; margin-top: 20px; margin-bottom: 15px; display: flex; align-items: center; gap: 10px; }
+    .theme-executive h2::before { content: ''; display: block; width: 6px; height: 24px; background-color: #0E2954; }
+    .theme-executive .skill-title { color: #1F2937; font-weight: bold; font-size: 0.8rem; display:block; }
+    .theme-executive .skill-desc { color: #4B5563; font-size: 0.75rem; }
+    .theme-executive .contact-text { color: #374151; }
 
-        /* --- THEME 1: MODERN BLUE (Sidebar Style) --- */
-        .theme-modern {
-            font-family: 'Inter', sans-serif;
-            display: flex;
-            flex-direction: row;
-            color: #374151;
-        }
-        .theme-modern .sidebar {
-            width: 34%; /* Sedikit diperlebar untuk mengakomodasi skill detail */
-            background-color: #0E2954;
-            color: white;
-            padding: 30px 20px;
-            display: flex;
-            flex-direction: column;
-        }
-        .theme-modern .main-content {
-            width: 66%;
-            padding: 40px;
-            background-color: white;
-        }
-        .theme-modern .header-section {
-            display: none;
-        }
-        .theme-modern .sidebar-header {
-            display: block;
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        .theme-modern h2 {
-            color: #0E2954;
-            text-transform: uppercase;
-            letter-spacing: 0.05em;
-            font-weight: 700;
-            border-bottom: 2px solid #e5e7eb;
-            padding-bottom: 5px;
-            margin-bottom: 15px;
-            margin-top: 25px;
-            font-size: 1.1rem;
-        }
-        .theme-modern .sidebar h3 {
-            color: #BFDBFE;
-            text-transform: uppercase;
-            font-size: 0.85rem;
-            border-bottom: 1px solid #3B82F6;
-            padding-bottom: 5px;
-            margin-bottom: 10px;
-            margin-top: 25px;
-            font-weight: 600;
-        }
-        .theme-modern .job-item {
-            margin-bottom: 20px;
-            padding-left: 15px;
-            border-left: 3px solid #0E2954;
-        }
+    /* --- THEME 3: ATS FRIENDLY --- */
+    .theme-ats { font-family: 'Merriweather', serif; display: block; padding: 40px; color: black; }
+    .theme-ats .content-wrapper { display: flex; flex-direction: column; }
+    .theme-ats .sidebar { width: 100%; background: none; color: black; padding: 0; order: 2; border-top: 1px solid #000; margin-top: 20px; padding-top: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+    .theme-ats .sidebar-header { display: none; }
+    .theme-ats .header-section { display: block; text-align: center; margin-bottom: 20px; border-bottom: 1px solid black; padding-bottom: 20px; }
+    .theme-ats .main-content { width: 100%; padding: 0; background: none; order: 1; }
+    .theme-ats h1 { font-size: 2rem; text-transform: uppercase; margin-bottom: 5px; text-align: center; }
+    .theme-ats h2 { font-weight: 700; text-transform: uppercase; border-bottom: 1px solid #000; margin-top: 20px; margin-bottom: 10px; padding-bottom: 3px; }
+    .theme-ats h3 { font-weight: 700; text-transform: uppercase; margin-top: 20px; font-size: 1rem; color: black !important; border: none !important; }
+    .theme-ats .job-item { border: none; padding: 0; margin-bottom: 15px; }
+    .theme-ats .contact-info-block { display: none; } /* Uses header contact */
+    .theme-ats .skill-tag { margin-bottom: 5px; }
+    .theme-ats .skill-title { font-weight: bold; color: black; }
+    .theme-ats .skill-desc { color: black; }
+    .theme-ats li { list-style-type: square; margin-left: 20px; }
 
-        /* --- THEME 2: EUROPASS / EXECUTIVE --- */
-        .theme-executive {
-            font-family: 'Roboto', sans-serif;
-            display: flex;
-            flex-direction: column;
-            color: #1f2937;
-        }
-        .theme-executive .sidebar-header {
-            display: none;
-        }
-        .theme-executive .header-section {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 30px 40px;
-            background-color: white;
-            border-bottom: 4px solid #0E2954;
-        }
-        .theme-executive .content-wrapper {
-            display: flex;
-            flex-direction: row-reverse;
-            flex-grow: 1;
-        }
-        .theme-executive .sidebar {
-            width: 30%;
-            background-color: #F3F4F6;
-            color: #111827;
-            padding: 30px 20px;
-            border-left: 1px solid #e5e7eb;
-        }
-        .theme-executive .main-content {
-            width: 70%;
-            padding: 30px 40px;
-        }
-        .theme-executive h1 {
-            color: #0E2954;
-            font-size: 2.2rem;
-            text-transform: uppercase;
-        }
-        .theme-executive .sidebar h3 {
-            color: #0E2954;
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-bottom: 10px;
-            margin-top: 25px;
-            font-size: 0.9rem;
-        }
-        .theme-executive .sidebar p, .theme-executive .sidebar span, .theme-executive .sidebar li {
-            color: #374151;
-        }
-        .theme-executive .initial-circle {
-            display: none;
-        }
-        .theme-executive h2 {
-            font-size: 1.25rem;
-            color: #0E2954;
-            font-weight: 700;
-            margin-top: 20px;
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 10px;
-        }
-        .theme-executive h2::before {
-            content: '';
-            display: block;
-            width: 6px;
-            height: 24px;
-            background-color: #0E2954;
-        }
-        .theme-executive .contact-icon { color: #0E2954 !important; }
-        .theme-executive .contact-text { color: #374151 !important; }
+    /* UTILS */
+    .initial-circle { width: 80px; height: 80px; background-color: #60A5FA; border-radius: 50%; margin: 0 auto; display: flex; align-items: center; justify-content: center; font-size: 2rem; font-weight: bold; color: #0E2954; margin-bottom: 1rem; border: 4px solid white; }
+  `}</style>
+);
 
-        /* --- THEME 3: ATS FRIENDLY --- */
-        .theme-ats {
-            font-family: 'Merriweather', serif;
-            display: block;
-            padding: 40px;
-            color: black;
-        }
-        .theme-ats .content-wrapper {
-            display: flex;
-            flex-direction: column;
-        }
-        .theme-ats .sidebar {
-            width: 100%;
-            background: none;
-            color: black;
-            padding: 0;
-            order: 2;
-            border-top: 1px solid #000;
-            margin-top: 20px;
-            padding-top: 20px;
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 20px;
-        }
-        .theme-ats .sidebar-header { display: none; }
-        .theme-ats .header-section {
-            display: block;
-            text-align: center;
-            margin-bottom: 20px;
-            border-bottom: 1px solid black;
-            padding-bottom: 20px;
-        }
-        .theme-ats .initial-circle { display: none; }
-        .theme-ats .main-content {
-            width: 100%;
-            padding: 0;
-            background: none;
-            order: 1;
-        }
-        .theme-ats h1 {
-            font-size: 2rem;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-        .theme-ats .header-contact { font-size: 0.9rem; margin-top: 5px;}
-        .theme-ats h2 {
-            font-weight: 700;
-            text-transform: uppercase;
-            border-bottom: 1px solid #000;
-            margin-top: 20px;
-            margin-bottom: 10px;
-            padding-bottom: 3px;
-        }
-        .theme-ats h3 {
-            font-weight: 700;
-            text-transform: uppercase;
-            margin-top: 20px;
-            font-size: 1rem;
-            color: black !important;
-            border: none !important;
-        }
-        .theme-ats .job-item {
-            border: none;
-            padding: 0;
-            margin-bottom: 15px;
-        }
-        .theme-ats .contact-info-block { display: none; }
-        .theme-ats .text-blue-200, .theme-ats .text-blue-300 { color: black !important; }
-        .theme-ats li { list-style-type: square; margin-left: 20px; }
-        
-        /* Helper for skill tags in sidebar */
-        .skill-tag {
-            font-size: 0.75rem;
-            line-height: 1.4;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-        .theme-modern .skill-title { color: #93C5FD; font-weight: bold; font-size: 0.8rem; }
-        .theme-modern .skill-desc { color: #E5E7EB; font-weight: 300; }
-        
-        .theme-executive .skill-title { color: #1F2937; font-weight: bold; font-size: 0.8rem; }
-        .theme-executive .skill-desc { color: #4B5563; }
-    </style>
-</head>
-<body>
+export default function CVBuilder() {
+  const [data, setData] = useState(initialData);
+  const [theme, setTheme] = useState('modern'); // modern, executive, ats
 
-    <!-- CONTROL PANEL (NO PRINT) -->
-    <div class="fixed bottom-5 right-5 no-print flex flex-col gap-3 z-50">
-        <div class="bg-white p-4 rounded-xl shadow-xl border border-gray-200 w-64">
-            <h4 class="font-bold text-gray-700 mb-3 text-sm uppercase tracking-wide">Pilih Tema CV:</h4>
-            <div class="flex flex-col gap-2">
-                <button onclick="setTheme('modern')" class="text-left px-4 py-2 rounded-lg text-sm font-medium hover:bg-blue-50 transition-colors border border-transparent focus:border-blue-500 flex items-center gap-2 group">
-                    <div class="w-3 h-3 rounded-full bg-[#0E2954]"></div> Modern Blue
-                </button>
-                <button onclick="setTheme('executive')" class="text-left px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors border border-transparent focus:border-gray-500 flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full bg-gray-600"></div> Executive / Europass
-                </button>
-                <button onclick="setTheme('ats')" class="text-left px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors border border-transparent focus:border-black flex items-center gap-2">
-                    <div class="w-3 h-3 rounded-full border border-black bg-white"></div> ATS Friendly
-                </button>
-            </div>
-            <hr class="my-3">
-            <button onclick="window.print()" class="w-full bg-[#0E2954] text-white font-bold py-2 rounded-lg shadow hover:bg-blue-900 transition text-sm flex justify-center items-center gap-2">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
-                </svg>
-                Cetak / Simpan PDF
-            </button>
+  // --- HANDLERS (LOGIKA EDIT/DELETE/ADD) ---
+
+  // Update Data Personal (Text fields)
+  const handlePersonalChange = (e) => {
+    setData({ ...data, personalInfo: { ...data.personalInfo, [e.target.name]: e.target.value } });
+  };
+
+  // Generic: Update Item di Array (Experience, Edu, Skills)
+  const updateArrayItem = (category, index, field, value) => {
+    const newArray = [...data[category]];
+    newArray[index][field] = value;
+    setData({ ...data, [category]: newArray });
+  };
+
+  // Generic: Hapus Item
+  const deleteArrayItem = (category, index) => {
+    const newArray = data[category].filter((_, i) => i !== index);
+    setData({ ...data, [category]: newArray });
+  };
+
+  // Add Experience
+  const addExperience = () => {
+    const newItem = { id: Date.now(), title: "Job Title", company: "Company Name", period: "2024 - Present", description: "Job description here..." };
+    setData({ ...data, experience: [newItem, ...data.experience] });
+  };
+
+  // Add Education
+  const addEducation = () => {
+    const newItem = { id: Date.now(), degree: "Degree", school: "University Name", period: "Year" };
+    setData({ ...data, education: [newItem, ...data.education] });
+  };
+
+  // Add Skill
+  const addSkill = () => {
+    const newItem = { id: Date.now(), title: "New Skill", desc: "Description" };
+    setData({ ...data, skills: [...data.skills, newItem] });
+  };
+  
+  // Add Tool (String Array)
+  const addTool = () => {
+     setData({ ...data, tools: [...data.tools, "New Tool"] });
+  }
+  
+  const updateTool = (index, value) => {
+    const newTools = [...data.tools];
+    newTools[index] = value;
+    setData({...data, tools: newTools});
+  }
+
+  // --- CUSTOM COMPONENT HANDLER ---
+  const addCustomSection = () => {
+    const title = prompt("Nama Bagian Baru (misal: Projects, Volunteer, Certification):");
+    if (title) {
+      setData({
+        ...data,
+        customSections: [...data.customSections, { id: Date.now(), title: title, items: ["New Item Description"] }]
+      });
+    }
+  };
+
+  const addCustomItem = (sectionIndex) => {
+    const newSections = [...data.customSections];
+    newSections[sectionIndex].items.push("New Detail");
+    setData({...data, customSections: newSections});
+  };
+
+  const updateCustomItem = (sectionIndex, itemIndex, value) => {
+    const newSections = [...data.customSections];
+    newSections[sectionIndex].items[itemIndex] = value;
+    setData({...data, customSections: newSections});
+  };
+
+  const removeCustomSection = (index) => {
+    const newSections = data.customSections.filter((_, i) => i !== index);
+    setData({...data, customSections: newSections});
+  };
+
+
+  // --- RENDER PREVIEW COMPONENTS (Bagian Tampilan CV) ---
+
+  const SidebarContent = () => (
+    <>
+      {/* Sidebar Header (Modern Only) */}
+      <div className="sidebar-header">
+        <div className="initial-circle no-print-bg">
+          {data.personalInfo.name.charAt(0)}
         </div>
-    </div>
+        <h1 className="text-2xl font-bold tracking-wider uppercase mb-1">{data.personalInfo.name}</h1>
+        <p className="text-blue-200 text-sm">{data.personalInfo.role}</p>
+      </div>
 
-    <!-- DOCUMENT ROOT -->
-    <div id="cv-document" class="theme-modern">
+      {/* Contact Info */}
+      <div className="contact-info-block mb-6">
+        <h3>Contact</h3>
+        <ul className="space-y-2 text-xs font-light">
+          <li className="flex items-start">
+            <span className="contact-icon">📍</span> <span className="contact-text">{data.personalInfo.address}</span>
+          </li>
+          <li className="flex items-start">
+            <span className="contact-icon">📞</span> <span className="contact-text">{data.personalInfo.phone}</span>
+          </li>
+          <li className="flex items-start">
+            <span className="contact-icon">📧</span> <span className="contact-text break-all">{data.personalInfo.email}</span>
+          </li>
+          <li className="flex items-start">
+            <span className="contact-icon">🔗</span> <span className="contact-text">{data.personalInfo.linkedin}</span>
+          </li>
+        </ul>
+      </div>
+
+      {/* Skills */}
+      <div className="mb-6">
+        <h3>Core Skills</h3>
+        {data.skills.map((skill, idx) => (
+          <div key={idx} className="skill-tag mb-3">
+            <span className="skill-title">{skill.title}</span>
+            <span className="skill-desc block">{skill.desc}</span>
+          </div>
+        ))}
+      </div>
+
+      {/* Tools */}
+      <div className="mb-6">
+        <h3>Tools</h3>
+        <ul className="text-xs space-y-1 contact-text">
+          {data.tools.map((tool, idx) => (
+             <li key={idx}>• {tool}</li>
+          ))}
+        </ul>
+      </div>
+
+      {/* Languages */}
+      <div className="mb-6">
+        <h3>Languages</h3>
+        <ul className="space-y-1 text-xs contact-text">
+          {data.languages.map((lang, idx) => (
+             <li key={idx} className="flex justify-between">
+               <span>{lang.name}</span>
+               <span className="opacity-75">{lang.level}</span>
+             </li>
+          ))}
+        </ul>
+      </div>
+    </>
+  );
+
+  return (
+    <div className="min-h-screen bg-gray-100 flex flex-col md:flex-row font-sans">
+      <OriginalStyles />
+
+      {/* --- EDITOR PANEL (KIRI) --- */}
+      <div className="w-full md:w-1/3 bg-white border-r border-gray-200 h-screen overflow-y-auto p-6 shadow-lg no-print">
+        <div className="flex justify-between items-center mb-6">
+          <h2 className="text-xl font-bold text-gray-800 flex items-center gap-2">
+            <Layout size={20} /> CV Editor
+          </h2>
+          <button onClick={() => window.print()} className="bg-blue-900 text-white px-3 py-1 rounded text-sm flex items-center gap-2 hover:bg-blue-800">
+            <Download size={16} /> PDF
+          </button>
+        </div>
+
+        {/* Theme Switcher */}
+        <div className="mb-6 bg-gray-50 p-3 rounded-lg border">
+          <label className="text-xs font-bold text-gray-500 uppercase block mb-2">Pilih Tema</label>
+          <div className="flex gap-2">
+            <button onClick={() => setTheme('modern')} className={`flex-1 py-2 text-xs rounded border ${theme === 'modern' ? 'bg-blue-900 text-white' : 'bg-white'}`}>Modern</button>
+            <button onClick={() => setTheme('executive')} className={`flex-1 py-2 text-xs rounded border ${theme === 'executive' ? 'bg-gray-700 text-white' : 'bg-white'}`}>Executive</button>
+            <button onClick={() => setTheme('ats')} className={`flex-1 py-2 text-xs rounded border ${theme === 'ats' ? 'bg-white border-black text-black font-bold' : 'bg-white'}`}>ATS</button>
+          </div>
+        </div>
+
+        {/* Personal Info Form */}
+        <div className="mb-8">
+          <h3 className="font-bold text-gray-700 mb-3 flex items-center gap-2"><User size={16}/> Informasi Pribadi</h3>
+          <div className="space-y-3">
+            <input name="name" value={data.personalInfo.name} onChange={handlePersonalChange} placeholder="Nama Lengkap" className="w-full p-2 border rounded text-sm" />
+            <input name="role" value={data.personalInfo.role} onChange={handlePersonalChange} placeholder="Posisi / Gelar" className="w-full p-2 border rounded text-sm" />
+            <textarea name="summary" value={data.personalInfo.summary} onChange={handlePersonalChange} rows={4} placeholder="Summary" className="w-full p-2 border rounded text-sm" />
+            <div className="grid grid-cols-2 gap-2">
+              <input name="phone" value={data.personalInfo.phone} onChange={handlePersonalChange} placeholder="Telepon" className="w-full p-2 border rounded text-sm" />
+              <input name="email" value={data.personalInfo.email} onChange={handlePersonalChange} placeholder="Email" className="w-full p-2 border rounded text-sm" />
+            </div>
+             <input name="address" value={data.personalInfo.address} onChange={handlePersonalChange} placeholder="Alamat" className="w-full p-2 border rounded text-sm" />
+             <input name="linkedin" value={data.personalInfo.linkedin} onChange={handlePersonalChange} placeholder="LinkedIn URL" className="w-full p-2 border rounded text-sm" />
+          </div>
+        </div>
+
+        <hr className="my-6" />
+
+        {/* Experience Editor */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-3">
+             <h3 className="font-bold text-gray-700 flex items-center gap-2"><Briefcase size={16}/> Pengalaman Kerja</h3>
+             <button onClick={addExperience} className="text-blue-600 text-xs flex items-center hover:underline"><Plus size={14}/> Tambah</button>
+          </div>
+          {data.experience.map((exp, idx) => (
+            <div key={exp.id} className="mb-4 bg-gray-50 p-3 rounded border relative group">
+              <button onClick={() => deleteArrayItem('experience', idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"><Trash2 size={16}/></button>
+              <input value={exp.title} onChange={(e) => updateArrayItem('experience', idx, 'title', e.target.value)} placeholder="Job Title" className="w-full mb-2 bg-transparent border-b text-sm font-semibold focus:outline-none" />
+              <input value={exp.company} onChange={(e) => updateArrayItem('experience', idx, 'company', e.target.value)} placeholder="Company" className="w-full mb-2 bg-transparent border-b text-xs focus:outline-none" />
+              <input value={exp.period} onChange={(e) => updateArrayItem('experience', idx, 'period', e.target.value)} placeholder="Period" className="w-full mb-2 bg-transparent border-b text-xs text-gray-500 focus:outline-none" />
+              <textarea value={exp.description} onChange={(e) => updateArrayItem('experience', idx, 'description', e.target.value)} rows={3} placeholder="Deskripsi (Gunakan Enter untuk poin baru)" className="w-full text-xs bg-white p-2 border rounded" />
+            </div>
+          ))}
+        </div>
+
+        <hr className="my-6" />
+
+        {/* Education Editor */}
+        <div className="mb-8">
+          <div className="flex justify-between items-center mb-3">
+             <h3 className="font-bold text-gray-700 flex items-center gap-2"><GraduationCap size={16}/> Pendidikan</h3>
+             <button onClick={addEducation} className="text-blue-600 text-xs flex items-center hover:underline"><Plus size={14}/> Tambah</button>
+          </div>
+          {data.education.map((edu, idx) => (
+            <div key={edu.id} className="mb-4 bg-gray-50 p-3 rounded border relative group">
+              <button onClick={() => deleteArrayItem('education', idx)} className="absolute top-2 right-2 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100 transition"><Trash2 size={16}/></button>
+              <input value={edu.degree} onChange={(e) => updateArrayItem('education', idx, 'degree', e.target.value)} placeholder="Degree" className="w-full mb-2 bg-transparent border-b text-sm font-semibold focus:outline-none" />
+              <input value={edu.school} onChange={(e) => updateArrayItem('education', idx, 'school', e.target.value)} placeholder="School" className="w-full mb-2 bg-transparent border-b text-xs focus:outline-none" />
+              <input value={edu.period} onChange={(e) => updateArrayItem('education', idx, 'period', e.target.value)} placeholder="Period" className="w-full mb-2 bg-transparent border-b text-xs text-gray-500 focus:outline-none" />
+            </div>
+          ))}
+        </div>
+
+        <hr className="my-6" />
         
-        <!-- TOP HEADER (Only visible in Executive/ATS) -->
-        <header class="header-section">
-            <div class="flex-1">
-                <h1 class="font-bold text-3xl mb-1">RAHAYU</h1>
-                <p class="text-lg header-role text-gray-600 uppercase tracking-wide">MBA (International) Candidate</p>
-                <!-- Header Contact (ATS) -->
-                <div class="header-contact mt-2 text-sm hidden theme-ats:block">
-                    Douliu, Yunlin, Taiwan | +886 960-971-042 | rahayuazhr18@gmail.com <br>
-                    linkedin.com/in/rahayu-8361173a9
-                </div>
+        {/* Skills & Tools Editor */}
+        <div className="grid grid-cols-1 gap-6 mb-8">
+          <div>
+            <div className="flex justify-between items-center mb-3">
+               <h3 className="font-bold text-gray-700 flex items-center gap-2"><Wrench size={16}/> Skills</h3>
+               <button onClick={addSkill} className="text-blue-600 text-xs flex items-center hover:underline"><Plus size={14}/> Tambah</button>
             </div>
-            <!-- Executive Contact Info -->
-            <div class="text-right text-sm leading-relaxed hidden theme-executive:block">
-                <p>Douliu, Yunlin, Taiwan</p>
-                <p>+886 960-971-042</p>
-                <p>rahayuazhr18@gmail.com</p>
-            </div>
-        </header>
+            {data.skills.map((skill, idx) => (
+              <div key={skill.id} className="mb-2 p-2 border rounded bg-gray-50 relative group">
+                <button onClick={() => deleteArrayItem('skills', idx)} className="absolute top-1 right-1 text-red-400 hover:text-red-600 opacity-0 group-hover:opacity-100"><Trash2 size={12}/></button>
+                <input value={skill.title} onChange={(e) => updateArrayItem('skills', idx, 'title', e.target.value)} className="w-full text-xs font-bold bg-transparent mb-1" />
+                <textarea value={skill.desc} onChange={(e) => updateArrayItem('skills', idx, 'desc', e.target.value)} className="w-full text-xs bg-white p-1 border" rows={2}/>
+              </div>
+            ))}
+          </div>
 
-        <div class="content-wrapper h-full flex w-full">
+          <div>
+             <div className="flex justify-between items-center mb-3">
+               <h3 className="font-bold text-gray-700 flex items-center gap-2"><Globe size={16}/> Tools</h3>
+               <button onClick={addTool} className="text-blue-600 text-xs flex items-center hover:underline"><Plus size={14}/> Tambah</button>
+            </div>
+            {data.tools.map((tool, idx) => (
+               <div key={idx} className="flex gap-2 mb-2">
+                 <input value={tool} onChange={(e) => updateTool(idx, e.target.value)} className="flex-1 text-xs border p-1 rounded" />
+                 <button onClick={() => {
+                   const newTools = data.tools.filter((_, i) => i !== idx);
+                   setData({...data, tools: newTools});
+                 }} className="text-red-400"><Trash2 size={14}/></button>
+               </div>
+            ))}
+          </div>
+        </div>
+
+        {/* Custom Sections Editor */}
+        <div className="mb-8 p-3 bg-blue-50 border border-blue-100 rounded">
+            <div className="flex justify-between items-center mb-2">
+               <h3 className="font-bold text-blue-800 text-sm">Bagian Tambahan</h3>
+               <button onClick={addCustomSection} className="text-blue-600 text-xs flex items-center hover:underline font-bold"><Plus size={14}/> Section Baru</button>
+            </div>
+            <p className="text-xs text-blue-600 mb-3">Tambahkan Project, Sertifikasi, dll.</p>
             
-            <!-- SIDEBAR -->
-            <aside class="sidebar">
+            {data.customSections.map((section, sIdx) => (
+              <div key={section.id} className="mb-4 pl-3 border-l-2 border-blue-300">
+                <div className="flex justify-between">
+                   <input value={section.title} onChange={(e) => {
+                     const newSec = [...data.customSections];
+                     newSec[sIdx].title = e.target.value;
+                     setData({...data, customSections: newSec});
+                   }} className="font-bold text-sm bg-transparent mb-2" />
+                   <button onClick={() => removeCustomSection(sIdx)} className="text-red-400"><Trash2 size={14}/></button>
+                </div>
+                {section.items.map((item, iIdx) => (
+                  <div key={iIdx} className="flex gap-2 mb-1">
+                    <input value={item} onChange={(e) => updateCustomItem(sIdx, iIdx, e.target.value)} className="flex-1 text-xs border p-1" />
+                  </div>
+                ))}
+                <button onClick={() => addCustomItem(sIdx)} className="text-xs text-gray-500 mt-1 hover:text-black">+ Item</button>
+              </div>
+            ))}
+        </div>
+
+      </div>
+
+      {/* --- PREVIEW PANEL (KANAN) --- */}
+      <div className="w-full md:w-2/3 bg-gray-500 p-8 overflow-y-auto flex justify-center items-start">
+        
+        {/* CV CONTAINER */}
+        <div id="cv-preview-container" className={`theme-${theme}`}>
+          
+          {/* HEADER (Only visible in Executive/ATS) */}
+          <header className="header-section">
+             <div className="flex-1">
+                <h1 className="font-bold text-3xl mb-1">{data.personalInfo.name}</h1>
+                <p className="text-lg header-role text-gray-600 uppercase tracking-wide">{data.personalInfo.role}</p>
                 
-                <!-- Sidebar Header (Modern Theme Only) -->
-                <div class="sidebar-header">
-                    <div class="initial-circle w-20 h-20 bg-blue-400 rounded-full mx-auto flex items-center justify-center text-3xl font-bold text-[#0E2954] mb-4 border-4 border-white">
-                        R
-                    </div>
-                    <h1 class="text-2xl font-bold tracking-wider uppercase">RAHAYU</h1>
-                    <p class="text-blue-200 text-sm mt-1">MBA Candidate</p>
+                {/* Header Contact for ATS */}
+                <div className="header-contact mt-2 text-sm hidden theme-ats:block">
+                   {data.personalInfo.address} | {data.personalInfo.phone} | {data.personalInfo.email} <br/>
+                   {data.personalInfo.linkedin}
                 </div>
+             </div>
+             
+             {/* Header Contact for Executive */}
+             <div className="text-right text-sm leading-relaxed hidden theme-executive:block">
+                <p>{data.personalInfo.address}</p>
+                <p>{data.personalInfo.phone}</p>
+                <p>{data.personalInfo.email}</p>
+             </div>
+          </header>
 
-                <!-- Contact Info (Sidebar version) -->
-                <div class="contact-info-block mb-6">
-                    <h3 class="tracking-widest text-blue-100">Contact</h3>
-                    <ul class="space-y-2 text-xs font-light">
-                        <li class="flex items-start gap-3">
-                            <span class="mt-0.5 text-blue-300 contact-icon">📍</span>
-                            <span class="contact-text">Douliu, Yunlin, Taiwan</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="mt-0.5 text-blue-300 contact-icon">📞</span>
-                            <span class="contact-text">+886 960-971-042</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="mt-0.5 text-blue-300 contact-icon">📧</span>
-                            <span class="break-all contact-text">rahayuazhr18@gmail.com</span>
-                        </li>
-                        <li class="flex items-start gap-3">
-                            <span class="mt-0.5 text-blue-300 contact-icon">🔗</span>
-                            <a href="https://linkedin.com/in/rahayu-8361173a9" class="hover:underline contact-text">LinkedIn Profile</a>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- CORE SKILLS (Grouped) -->
-                <div class="mb-6">
-                    <h3 class="tracking-widest text-blue-100">Core Skills</h3>
-                    
-                    <div class="skill-tag">
-                        <span class="skill-title contact-text">Sales & Customer Support</span>
-                        <span class="skill-desc contact-text block">Customer handling, inquiries, relationship building.</span>
-                    </div>
-                    
-                    <div class="skill-tag">
-                        <span class="skill-title contact-text">Marketing Support</span>
-                        <span class="skill-desc contact-text block">Social media management, ads design, audience engagement.</span>
-                    </div>
-
-                    <div class="skill-tag">
-                        <span class="skill-title contact-text">Admin & Ops</span>
-                        <span class="skill-desc contact-text block">Documentation, data entry, SOP workflows, teamwork.</span>
-                    </div>
-
-                     <div class="skill-tag">
-                        <span class="skill-title contact-text">Content Production</span>
-                        <span class="skill-desc contact-text block">Short video editing, basic photo editing.</span>
-                    </div>
-                </div>
-
-                <!-- TOOLS -->
-                <div class="mb-6">
-                    <h3 class="tracking-widest text-blue-100">Tools</h3>
-                    <ul class="text-xs space-y-1 contact-text">
-                        <li>• Microsoft Office (Excel, Word, PPT)</li>
-                        <li>• Design: Canva, CapCut, Meitu</li>
-                        <li>• Statistics: Stata</li>
-                    </ul>
-                </div>
-
-                <!-- LANGUAGES -->
-                <div class="mb-6">
-                    <h3 class="tracking-widest text-blue-100">Languages</h3>
-                    <ul class="space-y-1 text-xs contact-text">
-                        <li class="flex justify-between">
-                            <span>Indonesian</span>
-                            <span class="text-blue-300 contact-icon">Native</span>
-                        </li>
-                        <li class="flex justify-between">
-                            <span>English</span>
-                            <span class="text-blue-300 contact-icon">Professional</span>
-                        </li>
-                        <li class="flex justify-between">
-                            <span>Mandarin</span>
-                            <span class="text-blue-300 contact-icon">Basic</span>
-                        </li>
-                    </ul>
-                </div>
-
-                <!-- AVAILABILITY -->
-                <div class="mt-auto pt-4 border-t border-blue-800 theme-executive:border-gray-300">
-                    <p class="text-xs font-bold text-black-400 theme-executive:text-green-700 contact-text">
-                        Available for immediate start (Based in Taiwan)
-                    </p>
-                </div>
+          <div className="content-wrapper h-full flex w-full">
+            
+            {/* SIDEBAR */}
+            <aside className="sidebar">
+               <SidebarContent />
             </aside>
 
-            <!-- MAIN CONTENT -->
-            <main class="main-content">
-                
-                <!-- Summary -->
-                <section class="mb-6">
-                    <h2>Professional Summary</h2>
-                    <p class="text-sm leading-relaxed text-justify">
-                        MBA (International) candidate with strengths in sales, marketing support, administration, and business operations. Experienced in customer communication, social media management, advertising content design, and team-based work in structured environments. Fast learner with strong work discipline and practical problem-solving skills.
-                    </p>
+            {/* MAIN CONTENT */}
+            <main className="main-content">
+              
+              {/* Summary */}
+              <section className="mb-6">
+                <h2>Professional Summary</h2>
+                <p className="text-sm leading-relaxed text-justify whitespace-pre-wrap">
+                  {data.personalInfo.summary}
+                </p>
+              </section>
+
+              {/* Experience */}
+              <section className="mb-6">
+                 <h2>Work Experience</h2>
+                 {data.experience.map(exp => (
+                   <div key={exp.id} className="job-item">
+                     <div className="flex justify-between items-baseline mb-1 flex-wrap">
+                        <h3 className="font-bold text-md m-0 p-0 border-none text-gray-800">{exp.title}</h3>
+                        <span className="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300 theme-ats:border-none theme-ats:bg-transparent theme-ats:p-0">{exp.period}</span>
+                     </div>
+                     <p className="text-sm italic mb-2 font-semibold text-gray-600">{exp.company}</p>
+                     <ul className="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
+                        {exp.description.split('\n').map((line, i) => (
+                          line && <li key={i}>{line}</li>
+                        ))}
+                     </ul>
+                   </div>
+                 ))}
+              </section>
+
+              {/* Education */}
+              <section className="mb-6">
+                 <h2>Education</h2>
+                 {data.education.map(edu => (
+                    <div key={edu.id} className="mb-4">
+                       <div className="flex justify-between items-start">
+                          <div>
+                             <h3 className="font-bold text-sm m-0 p-0 border-none text-gray-900">{edu.degree}</h3>
+                             <p className="text-xs text-gray-700">{edu.school}</p>
+                          </div>
+                          <div className="text-right">
+                             <p className="text-xs font-bold bg-blue-50 px-2 py-1 rounded inline-block theme-ats:bg-transparent theme-ats:p-0">{edu.period}</p>
+                          </div>
+                       </div>
+                    </div>
+                 ))}
+              </section>
+              
+              {/* Custom Sections (Komponen Tambahan) */}
+              {data.customSections.map(section => (
+                <section key={section.id} className="mb-6">
+                   <h2>{section.title}</h2>
+                   <ul className="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
+                      {section.items.map((item, idx) => (
+                        <li key={idx}>{item}</li>
+                      ))}
+                   </ul>
                 </section>
+              ))}
 
-                <!-- Experience -->
-                <section class="mb-6">
-                    <h2>Work Experience</h2>
-
-                    <!-- Job 1 (Taiwan - Ops) -->
-                    <div class="job-item">
-                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
-                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Operations / Production Support</h3>
-                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2023 – 2024</span>
-                        </div>
-                        <p class="text-sm italic mb-2 font-semibold text-gray-600">Part-time | Taiwan</p>
-                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
-                            <li>Followed SOP-based processes to support production flow and quality standards.</li>
-                            <li>Coordinated with team members to ensure smooth daily operations.</li>
-                            <li>Maintained clean and organized workstation aligned with safety practices.</li>
-                            <li>Demonstrated punctuality, discipline, and reliability.</li>
-                        </ul>
-                    </div>
-
-                    <!-- Job 2 (Taiwan - Digital Marketing) -->
-                    <div class="job-item">
-                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
-                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Digital Marketing & Live Streaming Support</h3>
-                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2023 – 2024</span>
-                        </div>
-                        <p class="text-sm italic mb-2 font-semibold text-gray-600">Part-Time | Taiwan</p>
-                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
-                            <li>Supported live streaming sessions and assisted real-time customer interaction.</li>
-                            <li>Responded to customer questions to support sales conversion.</li>
-                            <li>Prepared simple promotional content and edited short videos.</li>
-                        </ul>
-                    </div>
-
-                    <!-- Job 3 (Web Dragon) -->
-                    <div class="job-item">
-                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
-                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Admin & Customer Service</h3>
-                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2021 – 2022</span>
-                        </div>
-                        <p class="text-sm italic mb-2 font-semibold text-gray-600">Web Dragon (Startup) | Indonesia</p>
-                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
-                            <li>Handled customer inquiries and provided administrative support.</li>
-                            <li>Managed documentation, basic reporting, and task coordination.</li>
-                            <li>Supported customer communication by tracking issues and ensuring resolution.</li>
-                        </ul>
-                    </div>
-
-                    <!-- Job 4 (ReadyGo) -->
-                    <div class="job-item border-l-0">
-                        <div class="flex justify-between items-baseline mb-1 flex-wrap">
-                            <h3 class="font-bold text-md m-0 p-0 border-none text-gray-800">Social Media & Ad Designer</h3>
-                            <span class="text-xs font-bold bg-gray-100 px-2 py-1 rounded border border-gray-300">2020 – 2021</span>
-                        </div>
-                        <p class="text-sm italic mb-2 font-semibold text-gray-600">ReadyGo (Online Ride-Hailing) | Indonesia</p>
-                        <ul class="list-disc list-inside text-sm space-y-1 ml-1 text-gray-700">
-                            <li>Designed advertising visuals for social media and promotional campaigns.</li>
-                            <li>Managed social media posting and basic content scheduling.</li>
-                            <li>Edited promotional videos for marketing content and user engagement.</li>
-                        </ul>
-                    </div>
-                </section>
-
-                <!-- Education -->
-                <section>
-                    <h2>Education</h2>
-                    
-                    <div class="mb-4">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-bold text-sm m-0 p-0 border-none">Master of Business Administration (International)</h3>
-                                <p class="text-xs text-gray-700">National Yunlin University of Science and Technology, Taiwan</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs font-bold bg-blue-50 px-2 py-1 rounded inline-block">2023 – 2026 (Expected)</p>
-                            </div>
-                        </div>
-                    </div>
-
-                    <div class="pt-2 border-t border-dashed border-gray-300">
-                        <div class="flex justify-between items-start">
-                            <div>
-                                <h3 class="font-bold text-sm m-0 p-0 border-none">Bachelor of Intl. Business Administration</h3>
-                                <p class="text-xs text-gray-700">Politeknik Negeri Bengkalis, Indonesia</p>
-                            </div>
-                            <div class="text-right">
-                                <p class="text-xs font-bold text-gray-600">2018 – 2022</p>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                 <!-- Strengths for ATS (Hidden in Modern/Exec because already in sidebar/summary) -->
-                 <section class="mt-4 pt-4 border-t border-black hidden theme-ats:block">
-                    <h2>Professional Strengths</h2>
-                    <p class="text-sm">Disciplined, Punctual, Organized, Honest, Fast Learner, Problem Solving.</p>
-                </section>
+              {/* Strengths (ATS Fallback) */}
+              <section className="mt-4 pt-4 border-t border-black hidden theme-ats:block">
+                 <h2>Tools & Skills Summary</h2>
+                 <p className="text-sm">
+                   {data.skills.map(s => s.title).join(', ')}. {data.tools.join(', ')}.
+                 </p>
+              </section>
 
             </main>
+          </div>
         </div>
+      </div>
     </div>
-
-    <script>
-        // Theme Switcher Logic
-        function setTheme(themeName) {
-            const doc = document.getElementById('cv-document');
-            doc.classList.remove('theme-modern', 'theme-executive', 'theme-ats');
-            doc.classList.add('theme-' + themeName);
-        }
-    </script>
-</body>
-</html>
+  );
+}
