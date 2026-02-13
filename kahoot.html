@@ -1,0 +1,726 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Quiz - E-Learning Seru</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;600;800&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Rubik', sans-serif; overflow-x: hidden; }
+        
+        /* Kahoot Colors */
+        .bg-k-red { background-color: #e21b3c; }
+        .bg-k-blue { background-color: #1368ce; }
+        .bg-k-yellow { background-color: #ffa602; }
+        .bg-k-green { background-color: #26890c; }
+        .bg-k-purple { background-color: #46178f; } /* Main Brand */
+        
+        .shape-shadow { box-shadow: 0px 6px 0px rgba(0,0,0,0.2); }
+        .shape-shadow:active { box-shadow: 0px 2px 0px rgba(0,0,0,0.2); transform: translateY(4px); }
+
+        .animate-pop { animation: pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 100% { transform: scale(1); opacity: 1; } }
+
+        /* Background Pattern */
+        .bg-pattern {
+            background-color: #f2f2f2;
+            background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23d1d5db' fill-opacity='0.4'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+        }
+    </style>
+</head>
+<body class="bg-pattern min-h-screen text-slate-800">
+
+    <div id="app" class="min-h-screen flex flex-col relative">
+        <!-- App Content Rendered Here -->
+    </div>
+
+    <!-- Background Music Audio Object (Simulated) -->
+    <!-- Note: Browser policy requires interaction to play audio, handled in scripts -->
+
+    <script>
+        // --- DATABASE & STATE MANAGEMENT ---
+
+        // Default Data Quiz
+        const defaultDB = {
+            quizzes: [
+                {
+                    id: 'q1',
+                    title: "Pengetahuan Umum Seru!",
+                    questions: [
+                        { text: "Apa warna bendera Indonesia?", time: 20, answers: [
+                            { text: "Merah Putih", correct: true }, { text: "Putih Merah", correct: false },
+                            { text: "Merah Biru", correct: false }, { text: "Kuning Hijau", correct: false }
+                        ]},
+                        { text: "Hewan apa yang memiliki belalai?", time: 10, answers: [
+                            { text: "Kucing", correct: false }, { text: "Gajah", correct: true },
+                            { text: "Ayam", correct: false }, { text: "Semut", correct: false }
+                        ]},
+                        { text: "2 + 2 x 2 = ...", time: 30, answers: [
+                            { text: "8", correct: false }, { text: "6", correct: true },
+                            { text: "10", correct: false }, { text: "4", correct: false }
+                        ]}
+                    ]
+                }
+            ]
+        };
+
+        // Load / Save Data
+        let db = JSON.parse(localStorage.getItem('superQuizDB')) || defaultDB;
+        function saveDB() { localStorage.setItem('superQuizDB', JSON.stringify(db)); }
+
+        // --- SESSION MANAGEMENT (The Magic of Sync) ---
+        // Kita menggunakan localStorage sebagai 'Server' sederhana
+        
+        const SESSION_KEY = 'superQuizSession';
+        
+        let session = {
+            pin: null,
+            status: 'IDLE', // IDLE, LOBBY, QUESTION, RESULT, LEADERBOARD, PODIUM
+            hostId: null,
+            quizData: null,
+            currentQIndex: 0,
+            players: [], // { name, score, lastAnswer, streak }
+            qStartTime: 0,
+            showCorrect: false
+        };
+
+        // --- GLOBAL VARIABLES ---
+        let myRole = ''; // 'HOST' or 'PLAYER'
+        let myName = '';
+        let timerInterval = null;
+        let syncInterval = null;
+
+        const app = document.getElementById('app');
+
+        // --- NAVIGATION & RENDERING ---
+
+        function init() {
+            renderHome();
+            // Start Sync Loop
+            syncInterval = setInterval(syncState, 500); // Check 'server' every 0.5s
+        }
+
+        // --- SYNC LOGIC ---
+        function syncState() {
+            const raw = localStorage.getItem(SESSION_KEY);
+            if (!raw) return;
+            const serverSession = JSON.parse(raw);
+
+            // Jika kita PLAYER, kita ikuti state server
+            if (myRole === 'PLAYER') {
+                // Deteksi perubahan state
+                if (serverSession.status !== session.status || 
+                    serverSession.currentQIndex !== session.currentQIndex ||
+                    serverSession.showCorrect !== session.showCorrect) {
+                    
+                    session = serverSession; // Update local data
+                    renderPlayerScreen(); // Re-render UI
+                } else {
+                    // Update data kecil (misal list player nambah) tanpa re-render full
+                    session = serverSession;
+                }
+            }
+        }
+
+        function updateSession(updates) {
+            // Hanya HOST yang boleh tulis full update ke session global
+            // Player hanya update diri sendiri di array players
+            const raw = localStorage.getItem(SESSION_KEY);
+            let currentSess = raw ? JSON.parse(raw) : session;
+            
+            Object.assign(currentSess, updates);
+            localStorage.setItem(SESSION_KEY, JSON.stringify(currentSess));
+            session = currentSess; // Update local immediately
+        }
+
+        // --- 1. HOME SCREEN ---
+        function renderHome() {
+            app.innerHTML = `
+                <div class="flex-1 flex flex-col items-center justify-center p-6 bg-k-purple text-white relative overflow-hidden">
+                    <!-- Background Shapes -->
+                    <div class="absolute top-10 left-10 w-20 h-20 bg-white opacity-10 rounded-full animate-bounce"></div>
+                    <div class="absolute bottom-20 right-10 w-32 h-32 bg-k-yellow opacity-20 rotate-45 animate-pulse"></div>
+
+                    <h1 class="text-6xl font-black mb-2 drop-shadow-lg tracking-wider">SUPER<span class="text-k-yellow">QUIZ</span></h1>
+                    <p class="text-xl mb-12 opacity-90 font-medium">Platform Kuis Interaktif</p>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 w-full max-w-2xl z-10">
+                        <button onclick="enterHostMode()" class="bg-white text-k-purple p-8 rounded-2xl shadow-xl hover:scale-105 transition transform flex flex-col items-center group">
+                            <i class="fas fa-chalkboard-teacher text-5xl mb-4 group-hover:animate-bounce"></i>
+                            <span class="text-2xl font-bold">Saya GURU</span>
+                            <span class="text-sm opacity-70">Buat & Host Kuis</span>
+                        </button>
+                        <button onclick="enterPlayerMode()" class="bg-white text-k-blue p-8 rounded-2xl shadow-xl hover:scale-105 transition transform flex flex-col items-center group">
+                            <i class="fas fa-mobile-alt text-5xl mb-4 group-hover:animate-bounce"></i>
+                            <span class="text-2xl font-bold">Saya MURID</span>
+                            <span class="text-sm opacity-70">Masuk ke Game</span>
+                        </button>
+                    </div>
+                    
+                    <div class="mt-12 text-sm opacity-50 text-center">
+                        Cara Main: Buka 1 tab sebagai Guru, dan tab lain sebagai Murid.
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- HOST FLOW ---
+
+        function enterHostMode() {
+            myRole = 'HOST';
+            renderHostDashboard();
+        }
+
+        function renderHostDashboard() {
+            app.innerHTML = `
+                <div class="bg-slate-100 min-h-screen">
+                    <nav class="bg-k-purple text-white p-4 shadow-md flex justify-between items-center">
+                        <h1 class="font-bold text-xl">Panel Guru</h1>
+                        <button onclick="location.reload()" class="text-sm bg-white/20 px-3 py-1 rounded">Keluar</button>
+                    </nav>
+                    
+                    <div class="max-w-4xl mx-auto p-6">
+                        <div class="flex justify-between items-center mb-6">
+                            <h2 class="text-2xl font-bold text-slate-700">Perpustakaan Kuis</h2>
+                            <button onclick="createNewQuiz()" class="bg-k-blue text-white px-6 py-3 rounded-lg font-bold shadow-lg hover:bg-blue-600 transition">
+                                <i class="fas fa-plus mr-2"></i> Buat Baru
+                            </button>
+                        </div>
+
+                        <div class="grid gap-4">
+                            ${db.quizzes.map((q, idx) => `
+                                <div class="bg-white p-6 rounded-xl shadow-sm hover:shadow-md transition flex justify-between items-center border-l-8 border-k-purple">
+                                    <div>
+                                        <h3 class="font-bold text-xl text-slate-800">${q.title}</h3>
+                                        <p class="text-slate-500">${q.questions.length} Pertanyaan</p>
+                                    </div>
+                                    <div class="flex gap-2">
+                                        <button onclick="editQuiz(${idx})" class="p-3 text-slate-400 hover:text-k-blue"><i class="fas fa-edit"></i></button>
+                                        <button onclick="hostGame(${idx})" class="bg-k-green text-white px-6 py-2 rounded-lg font-bold shadow hover:scale-105 transition">MAIN</button>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // --- QUIZ EDITOR (Simple) ---
+        function createNewQuiz() {
+            const title = prompt("Judul Kuis Baru:");
+            if(!title) return;
+            const newQ = { id: Date.now(), title: title, questions: [] };
+            db.quizzes.push(newQ);
+            saveDB();
+            editQuiz(db.quizzes.length - 1);
+        }
+
+        function editQuiz(idx) {
+            const q = db.quizzes[idx];
+            // Render Editor UI (Simplified for single file)
+            // Ideally this would be a full form. Using prompts for brevity in this demo.
+            if(confirm(`Edit "${q.title}"?\nKlik OK untuk tambah soal, Cancel untuk kembali.`)) {
+                const text = prompt("Tulis Pertanyaan:");
+                if(text) {
+                    const ans1 = prompt("Jawaban Benar:");
+                    const ans2 = prompt("Jawaban Salah 1:");
+                    const ans3 = prompt("Jawaban Salah 2:");
+                    const ans4 = prompt("Jawaban Salah 3:");
+                    q.questions.push({
+                        text, time: 20, 
+                        answers: [
+                            {text: ans1, correct: true}, {text: ans2, correct: false},
+                            {text: ans3, correct: false}, {text: ans4, correct: false}
+                        ].sort(() => Math.random() - 0.5) // Shuffle options
+                    });
+                    saveDB();
+                    renderHostDashboard();
+                }
+            } else {
+                renderHostDashboard();
+            }
+        }
+
+        // --- HOST GAME LOGIC ---
+
+        function hostGame(idx) {
+            // Setup Session
+            const pin = Math.floor(100000 + Math.random() * 900000).toString();
+            updateSession({
+                pin: pin,
+                status: 'LOBBY',
+                quizData: db.quizzes[idx],
+                currentQIndex: -1,
+                players: [],
+                showCorrect: false
+            });
+            renderHostLobby();
+        }
+
+        function renderHostLobby() {
+            // Polling untuk update list player
+            const lobbyInterval = setInterval(() => {
+                const raw = localStorage.getItem(SESSION_KEY);
+                if(raw) {
+                    const s = JSON.parse(raw);
+                    
+                    // CHECK: Jika status bukan LOBBY, hentikan interval
+                    // Ini mengelakkan error "Cannot set properties of null"
+                    if(s.status !== 'LOBBY') {
+                        clearInterval(lobbyInterval);
+                        return;
+                    }
+
+                    // CHECK: Pastikan elemen wujud sebelum update
+                    const playerCountEl = document.getElementById('playerCount');
+                    if(playerCountEl) playerCountEl.innerText = s.players.length;
+
+                    const list = document.getElementById('playerList');
+                    if (list) {
+                        list.innerHTML = s.players.map(p => `
+                            <div class="bg-white px-4 py-2 rounded-lg font-bold text-slate-700 shadow animate-pop">${p.name}</div>
+                        `).join('');
+                    }
+                }
+            }, 1000);
+
+            app.innerHTML = `
+                <div class="flex-1 bg-k-purple text-white flex flex-col items-center pt-10">
+                    <div class="bg-white/10 px-6 py-2 rounded-full mb-4 font-bold text-sm uppercase tracking-widest">Bergabung di Game</div>
+                    <div class="text-xl mb-2">Game PIN:</div>
+                    <div class="text-7xl font-black bg-white text-slate-800 px-10 py-4 rounded-xl shadow-2xl tracking-widest mb-12 animate-pulse">${session.pin}</div>
+
+                    <div class="w-full bg-slate-800/50 flex-1 rounded-t-3xl p-8 flex flex-col items-center">
+                        <div class="flex justify-between w-full max-w-4xl mb-6 items-center">
+                            <div class="flex items-center gap-2">
+                                <i class="fas fa-user"></i> <span id="playerCount">0</span> Pemain
+                            </div>
+                            <button onclick="startGame()" class="bg-white text-slate-900 px-8 py-3 rounded-lg font-bold text-xl shadow-lg hover:scale-105 transition">MULAI GAME</button>
+                        </div>
+                        
+                        <div id="playerList" class="flex flex-wrap gap-4 justify-center w-full max-w-5xl">
+                            <!-- Players appear here -->
+                            <div class="text-white/50 italic">Menunggu pemain...</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function startGame() {
+            updateSession({ status: 'QUESTION', currentQIndex: 0, qStartTime: Date.now(), showCorrect: false });
+            // Reset scores
+            const raw = localStorage.getItem(SESSION_KEY);
+            let s = JSON.parse(raw);
+            s.players.forEach(p => { p.score = 0; p.streak = 0; p.lastAnswer = null; });
+            localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+            
+            renderHostQuestion();
+        }
+
+        function renderHostQuestion() {
+            const q = session.quizData.questions[session.currentQIndex];
+            const timeLeft = q.time;
+            
+            // Render UI
+            app.innerHTML = `
+                <div class="flex-1 bg-slate-100 flex flex-col">
+                    <div class="bg-white p-4 shadow flex justify-between items-center">
+                        <span class="font-bold text-slate-500">${session.currentQIndex + 1} dari ${session.quizData.questions.length}</span>
+                        <div class="bg-k-purple text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-xl shadow" id="timerDisplay">${timeLeft}</div>
+                    </div>
+
+                    <div class="flex-1 flex flex-col items-center justify-center p-8 text-center">
+                        <h2 class="text-4xl font-bold text-slate-800 mb-10 max-w-4xl leading-tight">${q.text}</h2>
+                        
+                        <!-- Answers Preview (Guru lihat jawaban, Murid cuma lihat warna) -->
+                        <div class="grid grid-cols-2 gap-4 w-full max-w-4xl h-64">
+                            ${q.answers.map((a, i) => `
+                                <div class="${getShapeColor(i)} rounded-xl flex items-center p-6 shadow-lg">
+                                    <div class="bg-black/20 w-12 h-12 flex items-center justify-center rounded-md mr-4 text-white text-2xl">
+                                        <i class="${getShapeIcon(i)}"></i>
+                                    </div>
+                                    <span class="text-white font-bold text-2xl text-left">${a.text}</span>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+
+                    <div class="p-4 bg-white border-t flex justify-end">
+                        <button onclick="endQuestion()" class="bg-k-blue text-white px-6 py-2 rounded-lg font-bold">Lihat Hasil</button>
+                    </div>
+                </div>
+            `;
+
+            // Countdown Logic
+            let remaining = timeLeft;
+            clearInterval(timerInterval);
+            timerInterval = setInterval(() => {
+                remaining--;
+                
+                // CHECK: Pastikan elemen timer wujud
+                const timerEl = document.getElementById('timerDisplay');
+                if (timerEl) timerEl.innerText = remaining;
+                
+                if(remaining <= 0) {
+                    clearInterval(timerInterval);
+                    endQuestion();
+                }
+            }, 1000);
+        }
+
+        function endQuestion() {
+            clearInterval(timerInterval);
+            updateSession({ showCorrect: true, status: 'RESULT' });
+            renderHostResult();
+        }
+
+        function renderHostResult() {
+            // Hitung skor di sisi Host (Server logic simulation)
+            const raw = localStorage.getItem(SESSION_KEY);
+            let s = JSON.parse(raw);
+            const q = s.quizData.questions[s.currentQIndex];
+
+            // Tampilkan Bar Chart Jawaban
+            // Hitung berapa player jawab A, B, C, D
+            let counts = [0,0,0,0];
+            s.players.forEach(p => {
+                if(p.lastAnswer !== null) counts[p.lastAnswer]++;
+            });
+
+            app.innerHTML = `
+                <div class="flex-1 bg-slate-100 flex flex-col">
+                    <div class="p-6 text-center">
+                        <h2 class="text-3xl font-bold text-slate-800 mb-2">${q.text}</h2>
+                    </div>
+
+                    <div class="flex-1 flex items-end justify-center gap-8 pb-10 px-10">
+                        ${q.answers.map((a, i) => `
+                            <div class="flex flex-col items-center w-1/4 h-full justify-end">
+                                <div class="font-bold text-2xl mb-2 text-slate-700">${counts[i]}</div>
+                                <div class="${getShapeColor(i)} w-full rounded-t-lg transition-all duration-1000 relative ${a.correct ? 'opacity-100 ring-4 ring-green-400' : 'opacity-40'}" style="height: ${counts[i] === 0 ? 10 : (counts[i]/s.players.length)*60 + 10}%">
+                                    ${a.correct ? '<div class="absolute -top-10 left-1/2 transform -translate-x-1/2 text-green-500 text-3xl"><i class="fas fa-check-circle"></i></div>' : ''}
+                                </div>
+                                <div class="${getShapeColor(i)} w-full h-12 flex items-center justify-center text-white text-2xl mt-1 rounded-b-lg">
+                                    <i class="${getShapeIcon(i)}"></i>
+                                </div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <div class="p-4 bg-white border-t flex justify-end">
+                        <button onclick="showLeaderboard()" class="bg-k-blue text-white px-6 py-2 rounded-lg font-bold">Next (Papan Skor)</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function showLeaderboard() {
+            updateSession({ status: 'LEADERBOARD' });
+            
+            const raw = localStorage.getItem(SESSION_KEY);
+            const s = JSON.parse(raw);
+            const sortedPlayers = [...s.players].sort((a,b) => b.score - a.score).slice(0, 5);
+
+            app.innerHTML = `
+                <div class="flex-1 bg-k-purple flex flex-col items-center justify-center p-8">
+                    <h2 class="text-white text-4xl font-black mb-8">Papan Skor</h2>
+                    
+                    <div class="w-full max-w-2xl space-y-4">
+                        ${sortedPlayers.map((p, i) => `
+                            <div class="bg-white p-4 rounded-lg shadow-lg flex justify-between items-center transform transition hover:scale-105" style="opacity: ${1 - (i*0.1)}">
+                                <div class="flex items-center gap-4">
+                                    <div class="font-bold text-slate-400 w-6">#${i+1}</div>
+                                    <div class="font-bold text-xl text-slate-800">${p.name}</div>
+                                    ${p.streak > 2 ? '<span class="text-xs bg-orange-500 text-white px-2 rounded-full">🔥 ' + p.streak + '</span>' : ''}
+                                </div>
+                                <div class="font-bold text-xl text-slate-800">${p.score}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+
+                    <button onclick="nextStep()" class="mt-10 bg-white text-slate-900 px-8 py-3 rounded-lg font-bold shadow-xl hover:bg-gray-100">Lanjut</button>
+                </div>
+            `;
+        }
+
+        function nextStep() {
+            const raw = localStorage.getItem(SESSION_KEY);
+            let s = JSON.parse(raw);
+            
+            if (s.currentQIndex < s.quizData.questions.length - 1) {
+                // Next Question
+                updateSession({ 
+                    status: 'QUESTION', 
+                    currentQIndex: s.currentQIndex + 1,
+                    qStartTime: Date.now(),
+                    showCorrect: false 
+                });
+                
+                // Reset player last answer null (but keep score)
+                s.players.forEach(p => p.lastAnswer = null);
+                localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+                
+                renderHostQuestion();
+            } else {
+                // Game Over
+                updateSession({ status: 'PODIUM' });
+                renderPodium(s.players);
+            }
+        }
+
+        function renderPodium(players) {
+            const sorted = [...players].sort((a,b) => b.score - a.score);
+            const top3 = [sorted[1], sorted[0], sorted[2]]; // 2nd, 1st, 3rd logic layout
+
+            app.innerHTML = `
+                <div class="flex-1 bg-k-purple flex flex-col items-center justify-end pb-10 overflow-hidden relative">
+                    <!-- Confetti (Simple CSS) -->
+                    
+                    <h1 class="text-5xl text-white font-black mb-10 z-10">PODIUM</h1>
+
+                    <div class="flex items-end justify-center gap-4 w-full max-w-3xl px-4 z-10">
+                        <!-- 2nd Place -->
+                        <div class="flex flex-col items-center w-1/3 animate-pop" style="animation-delay: 0.5s">
+                            <div class="font-bold text-white text-xl mb-2">${top3[0] ? top3[0].name : '-'}</div>
+                            <div class="font-bold text-white/70 mb-2">${top3[0] ? top3[0].score : 0}</div>
+                            <div class="bg-k-blue w-full h-40 rounded-t-lg shadow-2xl border-t-4 border-blue-400 flex items-center justify-center text-white text-5xl font-black">2</div>
+                        </div>
+                        
+                        <!-- 1st Place -->
+                        <div class="flex flex-col items-center w-1/3 animate-pop" style="animation-delay: 1s">
+                            <i class="fas fa-crown text-yellow-400 text-5xl mb-4 animate-bounce"></i>
+                            <div class="font-bold text-white text-2xl mb-2">${top3[1] ? top3[1].name : '-'}</div>
+                            <div class="font-bold text-white/70 mb-2">${top3[1] ? top3[1].score : 0}</div>
+                            <div class="bg-k-yellow w-full h-60 rounded-t-lg shadow-2xl border-t-4 border-yellow-300 flex items-center justify-center text-white text-6xl font-black">1</div>
+                        </div>
+
+                        <!-- 3rd Place -->
+                        <div class="flex flex-col items-center w-1/3 animate-pop" style="animation-delay: 0s">
+                            <div class="font-bold text-white text-xl mb-2">${top3[2] ? top3[2].name : '-'}</div>
+                            <div class="font-bold text-white/70 mb-2">${top3[2] ? top3[2].score : 0}</div>
+                            <div class="bg-k-red w-full h-32 rounded-t-lg shadow-2xl border-t-4 border-red-400 flex items-center justify-center text-white text-4xl font-black">3</div>
+                        </div>
+                    </div>
+                    
+                    <button onclick="location.reload()" class="mt-10 bg-white/20 text-white px-6 py-2 rounded-full hover:bg-white/40 z-10">Kembali ke Home</button>
+                </div>
+            `;
+        }
+
+
+        // --- PLAYER FLOW ---
+
+        function enterPlayerMode() {
+            myRole = 'PLAYER';
+            renderPlayerJoin();
+        }
+
+        function renderPlayerJoin() {
+            app.innerHTML = `
+                <div class="flex-1 bg-k-blue flex items-center justify-center p-6">
+                    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+                        <h2 class="text-2xl font-black text-slate-800 mb-6">GABUNG GAME</h2>
+                        <input id="pPin" type="number" class="w-full p-4 bg-slate-100 rounded-lg text-center text-xl font-bold mb-4 border-2 border-slate-200 focus:border-slate-800 outline-none" placeholder="Game PIN">
+                        <button onclick="checkPin()" class="w-full bg-slate-800 text-white py-4 rounded-lg font-bold text-lg shadow-shape hover:translate-y-1 transition active:shadow-none">Masuk</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function checkPin() {
+            const inputPin = document.getElementById('pPin').value;
+            const raw = localStorage.getItem(SESSION_KEY);
+            if(!raw) return alert("Belum ada game yang dibuat Guru!");
+            
+            const s = JSON.parse(raw);
+            if(s.pin === inputPin && s.status === 'LOBBY') {
+                renderPlayerNameInput();
+            } else {
+                alert("PIN Salah atau Game sudah mulai!");
+            }
+        }
+
+        function renderPlayerNameInput() {
+            app.innerHTML = `
+                <div class="flex-1 bg-k-blue flex items-center justify-center p-6">
+                    <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-sm text-center">
+                        <h2 class="text-2xl font-black text-slate-800 mb-6">Pilih Nickname</h2>
+                        <input id="pName" type="text" class="w-full p-4 bg-slate-100 rounded-lg text-center text-xl font-bold mb-4 border-2 border-slate-200 focus:border-slate-800 outline-none" placeholder="Nama Kamu">
+                        <button onclick="joinLobby()" class="w-full bg-k-green text-white py-4 rounded-lg font-bold text-lg shadow-shape">Mulai!</button>
+                    </div>
+                </div>
+            `;
+        }
+
+        function joinLobby() {
+            const name = document.getElementById('pName').value;
+            if(!name) return;
+            myName = name;
+
+            // Add self to DB
+            const raw = localStorage.getItem(SESSION_KEY);
+            let s = JSON.parse(raw);
+            s.players.push({ name: name, score: 0, streak: 0, lastAnswer: null });
+            localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+            
+            // Start Syncing view
+            session = s; // Init local session
+            renderPlayerScreen();
+        }
+
+        function renderPlayerScreen() {
+            // This functions routes based on session state
+            if(session.status === 'LOBBY') {
+                app.innerHTML = `
+                    <div class="flex-1 bg-k-green flex flex-col items-center justify-center p-6 text-white text-center">
+                        <h2 class="text-3xl font-black mb-4">Kamu sudah masuk!</h2>
+                        <p class="text-xl mb-8">Lihat nama kamu di layar Guru?</p>
+                        <div class="animate-spin text-4xl mb-4"><i class="fas fa-circle-notch"></i></div>
+                        <p class="opacity-80">Menunggu Guru memulai game...</p>
+                    </div>
+                `;
+            } 
+            else if(session.status === 'QUESTION') {
+                renderPlayerQuestionControls();
+            }
+            else if(session.status === 'RESULT') {
+                renderPlayerResultFeedback();
+            }
+            else if(session.status === 'LEADERBOARD' || session.status === 'PODIUM') {
+                // Find my score
+                const me = session.players.find(p => p.name === myName);
+                app.innerHTML = `
+                    <div class="flex-1 bg-k-purple flex flex-col items-center justify-center p-6 text-white text-center">
+                        <p class="mb-2 opacity-80">Skor Kamu</p>
+                        <div class="bg-white/20 px-6 py-2 rounded-lg font-black text-3xl mb-8">${me ? me.score : 0}</div>
+                        <p class="text-xl">Lihat layar depan...</p>
+                    </div>
+                `;
+            }
+        }
+
+        function renderPlayerQuestionControls() {
+            // Jika sudah jawab, tampilkan layar tunggu
+            const me = session.players.find(p => p.name === myName);
+            if(me && me.lastAnswer !== null) {
+                app.innerHTML = `
+                    <div class="flex-1 bg-k-blue flex flex-col items-center justify-center text-white">
+                        <div class="text-2xl font-bold mb-4">Jawaban Terkirim!</div>
+                        <div class="animate-bounce text-4xl"><i class="fas fa-paper-plane"></i></div>
+                    </div>
+                `;
+                return;
+            }
+
+            // Tampilkan 4 Tombol Kontrol Besar
+            app.innerHTML = `
+                <div class="flex-1 grid grid-cols-2 grid-rows-2 h-screen">
+                    <button onclick="submitAnswer(0)" class="bg-k-red hover:bg-red-600 shape-shadow flex items-center justify-center text-white text-6xl m-2 rounded-xl">
+                        <i class="fas fa-caret-up"></i>
+                    </button>
+                    <button onclick="submitAnswer(1)" class="bg-k-blue hover:bg-blue-600 shape-shadow flex items-center justify-center text-white text-5xl m-2 rounded-xl">
+                        <i class="fas fa-gem"></i>
+                    </button>
+                    <button onclick="submitAnswer(2)" class="bg-k-yellow hover:yellow-500 shape-shadow flex items-center justify-center text-white text-5xl m-2 rounded-xl">
+                        <i class="fas fa-circle"></i>
+                    </button>
+                    <button onclick="submitAnswer(3)" class="bg-k-green hover:green-600 shape-shadow flex items-center justify-center text-white text-5xl m-2 rounded-xl">
+                        <i class="fas fa-square"></i>
+                    </button>
+                </div>
+            `;
+        }
+
+        function submitAnswer(idx) {
+            // 1. Calculate Score based on speed
+            const now = Date.now();
+            const elapsed = (now - session.qStartTime) / 1000;
+            const q = session.quizData.questions[session.currentQIndex];
+            const maxTime = q.time;
+            
+            // Formula skor kahoot: (1 - (time_elapsed / time_total) / 2) * 1000
+            // Jika salah = 0
+            const isCorrect = q.answers[idx].correct;
+            let points = 0;
+            
+            if (isCorrect) {
+                const ratio = 1 - (elapsed / maxTime);
+                points = Math.round(ratio * 1000); 
+                if(points < 0) points = 0; // Just in case
+            }
+
+            // 2. Update My Data in Server
+            const raw = localStorage.getItem(SESSION_KEY);
+            let s = JSON.parse(raw);
+            const myIdx = s.players.findIndex(p => p.name === myName);
+            
+            if(myIdx !== -1) {
+                s.players[myIdx].lastAnswer = idx;
+                if(isCorrect) {
+                    s.players[myIdx].score += points;
+                    s.players[myIdx].streak += 1;
+                } else {
+                    s.players[myIdx].streak = 0;
+                }
+                localStorage.setItem(SESSION_KEY, JSON.stringify(s));
+                
+                // 3. Update local session to trigger "Wait" screen
+                session = s;
+                renderPlayerScreen();
+            }
+        }
+
+        function renderPlayerResultFeedback() {
+            const me = session.players.find(p => p.name === myName);
+            const q = session.quizData.questions[session.currentQIndex];
+            const myAnsIdx = me.lastAnswer;
+            
+            // Jika tidak jawab
+            if(myAnsIdx === null) {
+                 app.innerHTML = `<div class="flex-1 bg-slate-700 text-white flex flex-col items-center justify-center"><h1 class="text-4xl font-bold">Waktu Habis!</h1></div>`;
+                 return;
+            }
+
+            const isCorrect = q.answers[myAnsIdx].correct;
+
+            if(isCorrect) {
+                app.innerHTML = `
+                    <div class="flex-1 bg-k-green flex flex-col items-center justify-center text-white p-6 text-center animate-pop">
+                        <h1 class="text-5xl font-black mb-4">BENAR!</h1>
+                        <i class="fas fa-check-circle text-8xl mb-8"></i>
+                        <p class="text-xl opacity-80">Streak: ${me.streak} 🔥</p>
+                        <div class="bg-black/20 px-6 py-3 rounded-xl mt-4">
+                            <span class="text-sm">Total Skor</span>
+                            <div class="text-3xl font-bold">${me.score}</div>
+                        </div>
+                    </div>
+                `;
+            } else {
+                app.innerHTML = `
+                    <div class="flex-1 bg-k-red flex flex-col items-center justify-center text-white p-6 text-center animate-pop">
+                        <h1 class="text-5xl font-black mb-4">SALAH!</h1>
+                        <i class="fas fa-times-circle text-8xl mb-8"></i>
+                        <p class="text-xl opacity-80">Jangan menyerah!</p>
+                    </div>
+                `;
+            }
+        }
+
+        // --- UTILS ---
+        function getShapeColor(i) {
+            return ['bg-k-red', 'bg-k-blue', 'bg-k-yellow', 'bg-k-green'][i];
+        }
+        function getShapeIcon(i) {
+            return ['fas fa-caret-up', 'fas fa-gem', 'fas fa-circle', 'fas fa-square'][i];
+        }
+
+        // START
+        init();
+
+    </script>
+</body>
+</html>
